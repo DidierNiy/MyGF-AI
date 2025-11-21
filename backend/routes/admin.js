@@ -1,0 +1,15 @@
+const express = require('express');
+const { getUsers, sendAnnouncement } = require('../controllers/admin');
+const { protect } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorize');
+
+const router = express.Router();
+
+// All routes in this file are protected and restricted to Admins
+router.use(protect);
+router.use(authorize('Admin'));
+
+router.get('/users', getUsers);
+router.post('/announcements', sendAnnouncement);
+
+module.exports = router;
