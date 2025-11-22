@@ -131,6 +131,125 @@ exports.getMe = asyncHandler(async (req, res, next) => {
     res.status(200).json({ success: true, data: user });
 });
 
+// @desc    Forgot password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({ success: false, message: 'Please provide an email address' });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        // For security, don't reveal if email exists or not
+        return res.status(200).json({
+            success: true,
+            message: 'If an account exists with that email, a password reset link has been sent.'
+        });
+    }
+
+    // Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password?token=${resetToken}`;
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4F46E5;">Password Reset Request</h2>
+            <p>Hello ${user.name},</p>
+            <p>You requested to reset your password. Click the button below to reset it:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" 
+                   style="background-color: #4F46E5; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">
+                    Reset Password
+                </a>
+            </div>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="color: #666; word-break: break-all;">${resetUrl}</p>
+            <p style="color: #999; font-size: 12px; margin-top: 30px;">
+                This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
+            </p>
+        </div>
+    `;
+
+    try {
+        const sendEmail = require('../config/email');
+        await sendEmail({
+            email: user.email,
+            subject: 'Password Reset Request - MyGF AI',
+            html
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'If an account exists with that email, a password reset link has been sent.'
+        });
+    } catch (error) {
+        console.error('Email sending error:', error);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        return res.status(500).json({
+            success: false,
+            message: 'Email could not be sent. Please try again later.'
+        });
+    }
+});
+
+// @desc    Reset password
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+        return res.status(400).json({
+            success: false,
+            message: 'Please provide token and new password'
+        });
+    }
+
+    if (newPassword.length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: 'Password must be at least 6 characters long'
+        });
+    }
+
+    // Get hashed token
+    const resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken,
+        resetPasswordExpires: { $gt: Date.now() }
+    }).select('+password');
+
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid or expired reset token'
+        });
+    }
+
+    // Set new password
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+});
+
 
 // Helper to get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {

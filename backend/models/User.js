@@ -109,6 +109,14 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         select: false,
     },
+    resetPasswordToken: {
+        type: String,
+        select: false,
+    },
+    resetPasswordExpires: {
+        type: Date,
+        select: false,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
@@ -151,6 +159,23 @@ UserSchema.methods.getVerificationToken = function () {
     this.verificationTokenExpires = Date.now() + 10 * 60 * 1000;
 
     return otp; // Return unhashed OTP to be sent to user
+};
+
+// Generate and hash password reset token
+UserSchema.methods.getResetPasswordToken = function () {
+    // Generate token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    this.resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+
+    // Set expire time (1 hour)
+    this.resetPasswordExpires = Date.now() + 60 * 60 * 1000;
+
+    return resetToken; // Return unhashed token to be sent in email
 };
 
 

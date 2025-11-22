@@ -10,6 +10,8 @@ import { NotificationBadge } from '../NotificationBadge';
 import { NotificationPanel } from '../NotificationPanel';
 import { DashboardSidebar, DashboardSection } from '../DashboardSidebar';
 import { MenuIcon } from '../../icons/MenuIcon';
+import { LeadViewer } from '../LeadViewer';
+import { AutomationDashboard } from '../../AutomationDashboard';
 
 interface SellerDashboardProps {
     user?: User;
@@ -39,6 +41,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
         switch (activeSection) {
             case 'overview':
                 return <OwnerListingManager listings={listings} onOpenAddListingModal={() => setIsFormOpen(true)} onEditListing={onEditListing} onDeleteListing={onDeleteListing} />;
+            case 'leads':
+                return <LeadViewer />;
             case 'chat':
                 return (
                     <OwnerClientChat
@@ -49,8 +53,46 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                         onSendAgentMessage={onSendAgentMessage}
                     />
                 );
+            case 'marketing':
+                return <OwnerMarketing listings={listings} />;
+            case 'ai-settings':
+                return <OwnerAiSettings />;
+            case 'analytics':
+                return (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Analytics</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-xl">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Total Properties</p>
+                                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">{listings.length}</p>
+                            </div>
+                            <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-xl">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Active Chats</p>
+                                <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{Object.keys(interactionChats).length}</p>
+                            </div>
+                            <div className="bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</p>
+                                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">24%</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'automation':
+                return <AutomationDashboard user={user || { id: 'demo', name: 'Demo User', email: 'demo@example.com', role: 'Property Seller' } as User} automationEnabled={false} voiceFeatureEnabled={false} />;
+            case 'notifications':
+                return <NotificationPanel />;
+            case 'settings':
+                return user ? (
+                    <Settings user={user} onUpdate={(updatedUser) => {
+                        console.log('User updated:', updatedUser);
+                    }} />
+                ) : (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+                        <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
+                    </div>
+                );
             default:
-                return null;
+                return <OwnerListingManager listings={listings} onOpenAddListingModal={() => setIsFormOpen(true)} onEditListing={onEditListing} onDeleteListing={onDeleteListing} />;
         }
     };
 

@@ -11,6 +11,7 @@ import { NotificationBadge } from '../NotificationBadge';
 import { NotificationPanel } from '../NotificationPanel';
 import { DashboardSidebar, type DashboardSection } from '../DashboardSidebar';
 import { LeadViewer } from '../LeadViewer';
+import { AutomationDashboard } from '../../AutomationDashboard';
 
 interface LandlordDashboardProps {
     user?: User;
@@ -96,6 +97,8 @@ export const LandlordDashboard: React.FC<LandlordDashboardProps> = ({
                         </div>
                     </div>
                 );
+            case 'automation':
+                return <AutomationDashboard user={user || { id: 'demo', name: 'Demo User', email: 'demo@example.com', role: 'Landlord' } as User} automationEnabled={false} voiceFeatureEnabled={false} />;
             case 'notifications':
                 return <NotificationPanel />;
             case 'settings':

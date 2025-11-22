@@ -22,6 +22,8 @@ import { PropertyExplorerPage } from "./components/PropertyExplorerPage";
 import { FeaturePaymentModal } from "./components/modals/FeaturePaymentModal";
 import { AddTenantModal } from "./components/modals/AddTenantModal";
 import { LiveAudioHandler } from "./components/LiveAudioHandler";
+import { ForgotPassword } from "./components/signin/ForgotPassword";
+import { ResetPassword } from "./components/signin/ResetPassword";
 import {
   type Message,
   Role,
@@ -56,7 +58,9 @@ type View =
   | "interaction"
   | "propertyExplorer"
   | "signIn"
-  | "tenantSignIn";
+  | "tenantSignIn"
+  | "forgotPassword"
+  | "resetPassword";
 type Theme = "light" | "dark";
 
 const App: React.FC = () => {
@@ -124,6 +128,9 @@ const App: React.FC = () => {
 
   // State for Live Audio
   const [isLiveSessionActive, setIsLiveSessionActive] = useState(false);
+
+  // State for password reset
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined" && localStorage.getItem("theme")) {
@@ -216,6 +223,24 @@ const App: React.FC = () => {
       fetchAndSetProperties();
     };
     checkLoggedInStatus();
+  }, []);
+
+  // Check for password reset token in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (token) {
+      setResetToken(token);
+      // Assuming handleSetView is defined elsewhere in the component
+      // If not, you'd need to define it or directly set currentView
+      // For this example, I'll assume handleSetView exists or you'd replace it with setCurrentView
+      // If handleSetView is not defined, replace the line below with: setCurrentView('resetPassword');
+      // For now, I'll keep handleSetView as per the instruction.
+      handleSetView('resetPassword');
+      // Clear the token from URL for security
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {
@@ -678,6 +703,31 @@ const App: React.FC = () => {
     setIsPaymentModalOpen(false);
   };
 
+  const handleForgotPassword = async (email: string) => {
+    try {
+      await authService.forgotPassword(email);
+      // Success is handled by the ForgotPassword component
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to send reset email');
+    }
+  };
+
+  const handleResetPassword = async (token: string, newPassword: string) => {
+    try {
+      const response = await authService.resetPassword(token, newPassword);
+      const { token: authToken, user } = response.data;
+
+      // Auto-login after successful password reset
+      localStorage.setItem("token", authToken);
+      setCurrentUser(user);
+      setIsUserLoggedIn(true);
+
+      // Success is handled by the ResetPassword component
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to reset password');
+    }
+  };
+
   const handleOpenImageViewer = useCallback(
     (images: string[], startIndex = 0) => {
       setViewerImages(images);
@@ -877,6 +927,7 @@ const App: React.FC = () => {
             onGoToSignup={() => handleSetView("signup")}
             onGoToTenantSignIn={() => handleSetView("tenantSignIn")}
             onDemoSignIn={handleDemoSignIn}
+            onForgotPassword={() => handleSetView("forgotPassword")}
             isLoading={isLoading}
             error={authError}
           />
@@ -886,8 +937,28 @@ const App: React.FC = () => {
           <TenantSignIn
             onSignIn={handleTenantSignIn}
             onGoToAgentSignIn={() => handleSetView("signIn")}
+            onForgotPassword={() => handleSetView("forgotPassword")}
             isLoading={isLoading}
             error={authError}
+          />
+        );
+      case "forgotPassword":
+        return (
+          <ForgotPassword
+            onBackToLogin={() => handleSetView("signIn")}
+            onSubmit={handleForgotPassword}
+          />
+        );
+      case "resetPassword":
+        if (!resetToken) {
+          handleSetView("signIn");
+          return null;
+        }
+        return (
+          <ResetPassword
+            token={resetToken}
+            onBackToLogin={() => handleSetView("signIn")}
+            onSubmit={handleResetPassword}
           />
         );
       case "features":

@@ -71,7 +71,7 @@ export const CombinedDashboard: React.FC<CombinedDashboardProps> = ({
                 );
 
             case 'automation':
-                return <AutomationDashboard user={user} />;
+                return <AutomationDashboard user={user} automationEnabled={false} voiceFeatureEnabled={false} />;
             case 'tenantAi':
                 return (
                     <TenantAiManagement

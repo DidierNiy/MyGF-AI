@@ -133,7 +133,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({
             case 'marketing':
                 return <AgentMarketing listings={listings} onBoostClick={handleBoostClick} />;
             case 'automation':
-                return <AutomationDashboard user={user || { id: 'demo', name: 'Demo User', email: 'demo@example.com', role: 'agent' } as User} />;
+                return <AutomationDashboard user={user || { id: 'demo', name: 'Demo User', email: 'demo@example.com', role: 'Agent' } as User} automationEnabled={false} voiceFeatureEnabled={false} />;
             case 'ai-manager':
                 return (
                     <AIPropertyManager

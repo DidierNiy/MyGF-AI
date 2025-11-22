@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, getMe, verifyAccount, setupAccount } = require('../controllers/auth');
+const { register, login, getMe, verifyAccount, setupAccount, forgotPassword, resetPassword } = require('../controllers/auth');
 const { googleSignIn } = require('../controllers/googleAuth');
 const { protect } = require('../middleware/auth');
 const { check } = require('express-validator');
@@ -33,6 +33,12 @@ router.put('/setup', protect, setupAccount);
 
 // Google Sign-In
 router.post('/google', googleSignIn);
+
+// Forgot Password
+router.post('/forgot-password', forgotPassword);
+
+// Reset Password
+router.post('/reset-password', resetPassword);
 
 
 module.exports = router;

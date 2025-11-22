@@ -70,6 +70,12 @@ export const authService = {
     getMe: async () => {
         return api.get('/auth/me');
     },
+    forgotPassword: async (email: string) => {
+        return api.post('/auth/forgot-password', { email });
+    },
+    resetPassword: async (token: string, newPassword: string) => {
+        return api.post('/auth/reset-password', { token, newPassword });
+    },
 };
 
 // User Service
