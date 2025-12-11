@@ -19,91 +19,71 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
     onDelete,
     showConnectButton = true
 }) => {
-    const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
-
-    const handlePrevImage = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setCurrentImageIndex((prev) => (prev === 0 ? property.imageUrls.length - 1 : prev - 1));
-    };
-
-    const handleNextImage = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setCurrentImageIndex((prev) => (prev === property.imageUrls.length - 1 ? 0 : prev + 1));
-    };
-
     const images = property.imageUrls.length > 0
         ? property.imageUrls
         : [`https://picsum.photos/seed/${encodeURIComponent(property.title)}/800/600`];
 
     return (
         <div className="group relative w-full bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-800 flex flex-col h-full">
-            {/* Image Section */}
-            <div className="relative h-64 overflow-hidden cursor-pointer" onClick={onImageClick}>
-                <img
-                    src={images[currentImageIndex]}
-                    alt={property.title}
-                    className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+            {/* Image Section - Vertical Scroll */}
+            <div className="relative h-64 overflow-y-auto overflow-x-hidden custom-scrollbar cursor-pointer" onClick={onImageClick}>
+                <div className="flex flex-col">
+                    {images.map((img, idx) => (
+                        <div key={idx} className="relative w-full h-64 flex-shrink-0">
+                            <img
+                                src={img}
+                                alt={`${property.title} - Image ${idx + 1}`}
+                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
-                {/* Image Slider Controls */}
-                {images.length > 1 && (
-                    <>
-                        <button
-                            onClick={handlePrevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                        </button>
-                        <button
-                            onClick={handleNextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                        </button>
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                            {images.map((_, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`w-1.5 h-1.5 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-3' : 'bg-white/50'}`}
-                                />
-                            ))}
+                            {/* Show overlays only on first image */}
+                            {idx === 0 && (
+                                <>
+                                    {/* Price Tag */}
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
+                                        <div className="bg-white/90 dark:bg-black/80 backdrop-blur-md px-4 py-1.5 rounded-full shadow-lg">
+                                            <span className="text-indigo-600 dark:text-indigo-400 font-bold text-lg">{property.price}</span>
+                                        </div>
+                                        <div className={`px-3 py-1 rounded-full shadow-lg backdrop-blur-md text-xs font-bold text-white ${property.priceType === 'sale' ? 'bg-emerald-500/90' : 'bg-blue-500/90'}`}>
+                                            {property.priceType === 'sale' ? 'For Sale' : 'For Rent'}
+                                        </div>
+                                    </div>
+
+                                    {/* AI Investment Badge */}
+                                    {property.investment?.badge && (
+                                        <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse border border-white/20 backdrop-blur-md flex items-center gap-1">
+                                            <span>{property.investment.badge}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Title & Location Overlay */}
+                                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                                        <h3 className="text-2xl font-bold mb-1 drop-shadow-md truncate">{property.title}</h3>
+                                        <p className="text-gray-200 text-sm flex items-center gap-1 drop-shadow-sm">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                            {property.location}
+                                        </p>
+                                    </div>
+                                </>
+                            )}
                         </div>
-                    </>
-                )}
-
-                {/* Price Tag */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2 items-start">
-                    <div className="bg-white/90 dark:bg-black/80 backdrop-blur-md px-4 py-1.5 rounded-full shadow-lg">
-                        <span className="text-indigo-600 dark:text-indigo-400 font-bold text-lg">{property.price}</span>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full shadow-lg backdrop-blur-md text-xs font-bold text-white ${property.priceType === 'sale' ? 'bg-emerald-500/90' : 'bg-blue-500/90'}`}>
-                        {property.priceType === 'sale' ? 'For Sale' : 'For Rent'}
-                    </div>
+                    ))}
                 </div>
 
-                {/* AI Investment Badge */}
-                {property.investment?.badge && (
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse border border-white/20 backdrop-blur-md flex items-center gap-1">
-                        <span>{property.investment.badge}</span>
+                {/* Scroll Indicator */}
+                {images.length > 1 && (
+                    <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded-full text-xs backdrop-blur-sm pointer-events-none">
+                        {images.length} photos
                     </div>
                 )}
-
-                {/* Title & Location Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    <h3 className="text-2xl font-bold mb-1 drop-shadow-md truncate">{property.title}</h3>
-                    <p className="text-gray-200 text-sm flex items-center gap-1 drop-shadow-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                        {property.location}
-                    </p>
-                </div>
             </div>
 
             {/* Content Section */}
             <div className="p-6 flex flex-col flex-grow">
-                <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3 mb-6 flex-grow">
+                <div className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6 flex-grow overflow-y-auto custom-scrollbar max-h-24 pr-2">
                     {property.description}
-                </p>
+                </div>
 
                 {/* Agent Info & ROI */}
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">

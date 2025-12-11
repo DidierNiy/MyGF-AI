@@ -41,7 +41,7 @@ const UserSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['Agent', 'Property Seller', 'Landlord', 'Tenant', 'Admin'],
+        enum: ['Agent', 'Property Seller', 'Landlord', 'Tenant', 'Admin', 'Surveyor'],
         // Role is set during account setup, not during initial registration
     },
     // -- Fields for Tenant Management --

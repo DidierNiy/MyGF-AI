@@ -4,6 +4,12 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { LeadCaptureForm } from './LeadCaptureForm';
 import { generateInitialPitch, generateInteractionResponse } from '../services/geminiService';
+import { PropertyActionsSection } from './propertyActions/PropertyActionsSection';
+import { MortgageCalculatorPanel } from './propertyActions/MortgageCalculatorPanel';
+import { ValuationPanel } from './propertyActions/ValuationPanel';
+import { VerificationPanel } from './propertyActions/VerificationPanel';
+import { LandSearchPanel } from './propertyActions/LandSearchPanel';
+import { ScheduleViewingPanel } from './propertyActions/ScheduleViewingPanel';
 
 interface PropertyExplorerPageProps {
     property: Listing;
@@ -26,6 +32,13 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
     const [showLeadForm, setShowLeadForm] = useState(false);
     const [dealType, setDealType] = useState<'purchase' | 'rental' | 'viewing'>('viewing');
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(true);
+
+    // Property Actions Panel States
+    const [showMortgagePanel, setShowMortgagePanel] = useState(false);
+    const [showValuationPanel, setShowValuationPanel] = useState(false);
+    const [showVerificationPanel, setShowVerificationPanel] = useState(false);
+    const [showLandSearchPanel, setShowLandSearchPanel] = useState(false);
+    const [showScheduleViewingPanel, setShowScheduleViewingPanel] = useState(false);
 
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const imageRef = useRef<HTMLImageElement>(null);
@@ -72,9 +85,17 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
 
     useEffect(() => {
         if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+            // Add a small delay to ensure DOM is updated, then smooth scroll
+            setTimeout(() => {
+                if (chatContainerRef.current) {
+                    chatContainerRef.current.scrollTo({
+                        top: chatContainerRef.current.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100);
         }
-    }, [messages]);
+    }, [messages, isLoading]);
 
     const handleSendMessage = async (text: string) => {
         if (!text.trim() || isLoading) return;
@@ -217,7 +238,7 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
 
                 {/* Left Panel: Property Showcase (70% or Hidden) */}
-                <div className={`${isLeftPanelVisible ? 'w-full lg:w-[70%] flex' : 'hidden'} flex-col bg-white dark:bg-gray-900 overflow-y-auto border-r border-gray-200 dark:border-gray-700 transition-all duration-300`}>
+                <div className={`${isLeftPanelVisible ? 'flex' : 'hidden'} flex-col bg-white dark:bg-gray-900 overflow-y-auto overflow-x-hidden custom-scrollbar border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 transition-all duration-300 w-full lg:w-[70%] max-h-[50vh] lg:max-h-none`}>
                     {/* Image Gallery */}
                     <div className="relative bg-black flex items-center justify-center min-h-[300px] lg:h-[55vh]">
                         <img
@@ -288,11 +309,21 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
                         <div className="prose dark:prose-invert max-w-none">
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{property.description}</p>
                         </div>
+
+                        {/* Property Actions Section */}
+                        <PropertyActionsSection
+                            property={property}
+                            onOpenMortgage={() => setShowMortgagePanel(true)}
+                            onOpenValuation={() => setShowValuationPanel(true)}
+                            onOpenVerification={() => setShowVerificationPanel(true)}
+                            onOpenLandSearch={() => setShowLandSearchPanel(true)}
+                            onScheduleViewing={() => setShowScheduleViewingPanel(true)}
+                        />
                     </div>
                 </div>
 
                 {/* Right Panel: Deal Closing Chat (30% or Full Width) */}
-                <div className={`${isLeftPanelVisible ? 'w-full lg:w-[30%]' : 'w-full'} flex flex-col bg-white dark:bg-gray-800 h-[50vh] lg:h-auto border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 shadow-2xl z-10 relative transition-all duration-300`}>
+                <div className={`${isLeftPanelVisible ? 'w-full lg:w-[30%]' : 'w-full'} flex flex-col bg-white dark:bg-gray-800 flex-1 lg:h-auto border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-gray-700 shadow-2xl z-10 relative transition-all duration-300 min-h-[400px]`}>
 
                     {/* "Closing Room" Header */}
                     <div className="p-4 bg-gradient-to-r from-indigo-900 to-indigo-800 text-white shadow-md flex-shrink-0">
@@ -337,7 +368,8 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
                     {/* Messages Area */}
                     <div
                         ref={chatContainerRef}
-                        className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 dark:bg-gray-900 custom-scrollbar pb-40"
+                        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 bg-gray-50 dark:bg-gray-900 custom-scrollbar pb-40"
+                        style={{ scrollBehavior: 'smooth' }}
                     >
                         {messages.map(msg => (
                             <ChatMessage
@@ -353,7 +385,7 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
                                 isLoading={true}
                             />
                         )}
-                        <div className={`w-full shrink-0 ${isLeftPanelVisible ? 'h-32' : 'h-48'}`} />
+                        <div className="w-full shrink-0 h-32" />
                     </div>
 
                     {/* Chat Input - Floating Style */}
@@ -378,6 +410,37 @@ export const PropertyExplorerPage: React.FC<PropertyExplorerPageProps> = ({
                     onCancel={() => setShowLeadForm(false)}
                 />
             )}
+
+            {/* Property Action Panels */}
+            <MortgageCalculatorPanel
+                isOpen={showMortgagePanel}
+                onClose={() => setShowMortgagePanel(false)}
+                property={property}
+            />
+
+            <ValuationPanel
+                isOpen={showValuationPanel}
+                onClose={() => setShowValuationPanel(false)}
+                property={property}
+            />
+
+            <VerificationPanel
+                isOpen={showVerificationPanel}
+                onClose={() => setShowVerificationPanel(false)}
+                property={property}
+            />
+
+            <LandSearchPanel
+                isOpen={showLandSearchPanel}
+                onClose={() => setShowLandSearchPanel(false)}
+                property={property}
+            />
+
+            <ScheduleViewingPanel
+                isOpen={showScheduleViewingPanel}
+                onClose={() => setShowScheduleViewingPanel(false)}
+                property={property}
+            />
         </div>
     );
 };

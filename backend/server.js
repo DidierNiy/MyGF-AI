@@ -58,6 +58,9 @@ app.use('/api/maintenance', require('./routes/maintenance'));
 app.use('/api/leads', require('./routes/leads')); // Lead management routes
 app.use('/api/notifications', require('./routes/notifications')); // Notification routes
 app.use('/api/analytics', require('./routes/analytics')); // Analytics routes
+app.use('/api/verification', require('./routes/verification')); // Verification Center routes
+app.use('/api/surveyor', require('./routes/surveyor')); // Surveyor routes
+app.use('/api/survey-requests', require('./routes/surveyRequests')); // Survey request routes
 
 // Custom Error Handler Middleware
 app.use(errorHandler);

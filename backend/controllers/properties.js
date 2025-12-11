@@ -32,6 +32,11 @@ exports.getProperties = asyncHandler(async (req, res, next) => {
         filter.location = { $regex: req.query.location, $options: 'i' };
     }
 
+    // Filter by specific user if provided
+    if (req.query.userId) {
+        filter.createdBy = req.query.userId;
+    }
+
     query = Property.find(filter).populate('createdBy', 'name email');
 
     // Sort

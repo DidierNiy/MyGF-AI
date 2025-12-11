@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Navbar } from "./components/Navbar";
 import { Sidebar } from "./components/Sidebar";
 import { HeroIntro } from "./components/HeroIntro";
@@ -11,8 +10,7 @@ import { TenantSignIn } from "./components/signin/TenantSignIn";
 import { PaymentPending } from "./components/signin/PaymentPending";
 import { Features } from "./components/Features";
 import { AgentDashboard } from "./components/dashboard/agent/AgentDashboard";
-import { SellerDashboard } from "./components/dashboard/seller/SellerDashboard";
-import { LandlordDashboard } from "./components/dashboard/landlord/LandlordDashboard";
+import { OwnerDashboard } from "./components/dashboard/owner/OwnerDashboard";
 import { CombinedDashboard } from "./components/dashboard/combined/CombinedDashboard";
 import { TenantDashboard } from "./components/dashboard/tenant/TenantDashboard";
 import { ImageViewer } from "./components/ImageViewer";
@@ -22,8 +20,6 @@ import { PropertyExplorerPage } from "./components/PropertyExplorerPage";
 import { FeaturePaymentModal } from "./components/modals/FeaturePaymentModal";
 import { AddTenantModal } from "./components/modals/AddTenantModal";
 import { LiveAudioHandler } from "./components/LiveAudioHandler";
-import { ForgotPassword } from "./components/signin/ForgotPassword";
-import { ResetPassword } from "./components/signin/ResetPassword";
 import {
   type Message,
   Role,
@@ -58,9 +54,7 @@ type View =
   | "interaction"
   | "propertyExplorer"
   | "signIn"
-  | "tenantSignIn"
-  | "forgotPassword"
-  | "resetPassword";
+  | "tenantSignIn";
 type Theme = "light" | "dark";
 
 const App: React.FC = () => {
@@ -129,9 +123,6 @@ const App: React.FC = () => {
   // State for Live Audio
   const [isLiveSessionActive, setIsLiveSessionActive] = useState(false);
 
-  // State for password reset
-  const [resetToken, setResetToken] = useState<string | null>(null);
-
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined" && localStorage.getItem("theme")) {
       return localStorage.getItem("theme") as "light" | "dark";
@@ -194,7 +185,7 @@ const App: React.FC = () => {
           // Fetch data based on user role
           if (
             [
-              UserRole.PropertySeller,
+              UserRole.PropertyOwner,
               UserRole.Landlord,
               UserRole.Agent,
             ].includes(user.role)
@@ -223,24 +214,6 @@ const App: React.FC = () => {
       fetchAndSetProperties();
     };
     checkLoggedInStatus();
-  }, []);
-
-  // Check for password reset token in URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-
-    if (token) {
-      setResetToken(token);
-      // Assuming handleSetView is defined elsewhere in the component
-      // If not, you'd need to define it or directly set currentView
-      // For this example, I'll assume handleSetView exists or you'd replace it with setCurrentView
-      // If handleSetView is not defined, replace the line below with: setCurrentView('resetPassword');
-      // For now, I'll keep handleSetView as per the instruction.
-      handleSetView('resetPassword');
-      // Clear the token from URL for security
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
   }, []);
 
   useEffect(() => {
@@ -415,6 +388,10 @@ const App: React.FC = () => {
         }));
       } finally {
         setIsLoading(false);
+        // Trigger modal for new users after their first message
+        if (messages.length === 0 && !isUserLoggedIn && !chatUser) {
+          setIsSignInModalVisible(true);
+        }
       }
     },
     [
@@ -472,13 +449,6 @@ const App: React.FC = () => {
   const handleSendInteractionMessage = useCallback(
     async (inputText: string) => {
       if (!inputText.trim() || isLoading || !activeInteractionProperty) return;
-
-      // Show sign-in modal on first message if not authenticated (but don't block)
-      if (!isUserLoggedIn && !chatUser && !interactionChats[activeInteractionProperty.id]?.length) {
-        setIsSignInModalVisible(true);
-        // Don't return - allow message to be sent anyway
-      }
-
       const userMessage: Message = {
         id: Date.now().toString(),
         role: Role.USER,
@@ -517,7 +487,7 @@ const App: React.FC = () => {
         setIsLoading(false);
       }
     },
-    [isLoading, activeInteractionProperty, interactionChats, humanTakeoverChats, isUserLoggedIn, chatUser]
+    [isLoading, activeInteractionProperty, interactionChats, humanTakeoverChats]
   );
 
   const handleTakeoverChat = (propertyId: string) => {
@@ -552,38 +522,14 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleGoogleSignIn = async (credential: string) => {
-    try {
-      setIsLoading(true);
-      // Send Google credential to backend for verification
-      const response = await authService.googleSignIn({ credential });
-      const { token, user } = response.data;
-
-      // Store token and set user state
-      localStorage.setItem("token", token);
-      setCurrentUser(user);
-      setIsUserLoggedIn(true);
-
-      // Also set chat user for backward compatibility
-      setChatUser({
-        name: user.name,
-        email: user.email,
-        googleId: user.id,
-      });
-
-      setIsSignInModalVisible(false);
-      console.log('✅ Google Sign-In successful:', user);
-    } catch (error: any) {
-      console.error('Google Sign-In error:', error);
-      alert('Failed to sign in with Google. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSkipSignIn = () => {
+  const handleGoogleSignIn = () => {
+    const mockChatUser: ChatUser = {
+      name: "Alex Chen",
+      email: "alex.chen@example.com",
+      googleId: "123456789",
+    };
+    setChatUser(mockChatUser);
     setIsSignInModalVisible(false);
-    console.log('ℹ️ User chose to continue without signing in');
   };
 
   const handleSignIn = async (email: string, pass: string) => {
@@ -599,7 +545,7 @@ const App: React.FC = () => {
       setCurrentUser(user);
       setIsUserLoggedIn(true);
       if (
-        [UserRole.PropertySeller, UserRole.Landlord, UserRole.Agent].includes(
+        [UserRole.PropertyOwner, UserRole.Landlord, UserRole.Agent].includes(
           user.role
         )
       ) {
@@ -611,11 +557,7 @@ const App: React.FC = () => {
         handleSetView("dashboard");
       }
     } catch (error: any) {
-      // Extract specific error message from backend response
-      const errorMessage = error.response?.data?.message ||
-        error.message ||
-        "Invalid email or password.";
-      setAuthError(errorMessage);
+      setAuthError(error.message || "Invalid email or password.");
     } finally {
       setIsLoading(false);
     }
@@ -646,8 +588,9 @@ const App: React.FC = () => {
         password: pass,
       });
       const { token, user } = response.data;
-      // Tenant role check removed - tenants are created by Landlords/Agents
-      // For now, allow all roles to access tenant sign-in
+      if (user.role !== UserRole.Tenant) {
+        throw new Error("Access denied. This portal is for tenants only.");
+      }
       localStorage.setItem("token", token);
       setCurrentUser(user);
       setIsUserLoggedIn(true);
@@ -703,31 +646,6 @@ const App: React.FC = () => {
     setIsPaymentModalOpen(false);
   };
 
-  const handleForgotPassword = async (email: string) => {
-    try {
-      await authService.forgotPassword(email);
-      // Success is handled by the ForgotPassword component
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to send reset email');
-    }
-  };
-
-  const handleResetPassword = async (token: string, newPassword: string) => {
-    try {
-      const response = await authService.resetPassword(token, newPassword);
-      const { token: authToken, user } = response.data;
-
-      // Auto-login after successful password reset
-      localStorage.setItem("token", authToken);
-      setCurrentUser(user);
-      setIsUserLoggedIn(true);
-
-      // Success is handled by the ResetPassword component
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Failed to reset password');
-    }
-  };
-
   const handleOpenImageViewer = useCallback(
     (images: string[], startIndex = 0) => {
       setViewerImages(images);
@@ -754,11 +672,6 @@ const App: React.FC = () => {
         agentContact: currentUser?.email || "N/A",
       };
       setListings((prev) => [mappedProperty, ...prev]);
-
-      // Refresh properties from backend to ensure we have the complete data
-      await fetchAndSetProperties();
-
-      alert("Property added successfully!");
     } catch (error: any) {
       console.error("Failed to add listing:", error);
       let errorMessage = "Unknown error";
@@ -897,9 +810,6 @@ const App: React.FC = () => {
     if (view !== "interaction") setActiveInteractionPropertyId(null);
   };
 
-  // Get Google Client ID from environment
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-
   const renderView = () => {
     switch (currentView) {
       case "signup":
@@ -927,7 +837,7 @@ const App: React.FC = () => {
             onGoToSignup={() => handleSetView("signup")}
             onGoToTenantSignIn={() => handleSetView("tenantSignIn")}
             onDemoSignIn={handleDemoSignIn}
-            onForgotPassword={() => handleSetView("forgotPassword")}
+            onForgotPassword={() => alert("Forgot Password feature coming soon!")}
             isLoading={isLoading}
             error={authError}
           />
@@ -937,28 +847,9 @@ const App: React.FC = () => {
           <TenantSignIn
             onSignIn={handleTenantSignIn}
             onGoToAgentSignIn={() => handleSetView("signIn")}
-            onForgotPassword={() => handleSetView("forgotPassword")}
+            onForgotPassword={() => alert("Forgot Password feature coming soon!")}
             isLoading={isLoading}
             error={authError}
-          />
-        );
-      case "forgotPassword":
-        return (
-          <ForgotPassword
-            onBackToLogin={() => handleSetView("signIn")}
-            onSubmit={handleForgotPassword}
-          />
-        );
-      case "resetPassword":
-        if (!resetToken) {
-          handleSetView("signIn");
-          return null;
-        }
-        return (
-          <ResetPassword
-            token={resetToken}
-            onBackToLogin={() => handleSetView("signIn")}
-            onSubmit={handleResetPassword}
           />
         );
       case "features":
@@ -999,34 +890,17 @@ const App: React.FC = () => {
       case "dashboard":
         if (!isUserLoggedIn || !currentUser) {
           handleSetView(
-            currentUser?.role === 'tenant' ? "tenantSignIn" : "signIn"
+            currentUser?.role === UserRole.Tenant ? "tenantSignIn" : "signIn"
           );
           return null;
         }
 
-        // DATA PRIVACY: Filter listings to only show those owned by the current user
-        const userListings = listings.filter(listing => {
-          // Handle both populated object and direct ID string
-          const ownerId = typeof listing.createdBy === 'object' ? listing.createdBy?._id : listing.createdBy;
-          return ownerId === currentUser.id;
-        });
-
-        // DATA PRIVACY: Filter chats to only show those related to the user's listings
-        const userChats = Object.keys(interactionChats).reduce((acc, propertyId) => {
-          // Check if this property belongs to the user
-          const isUserProperty = userListings.some(l => l.id === propertyId);
-          if (isUserProperty) {
-            acc[propertyId] = interactionChats[propertyId];
-          }
-          return acc;
-        }, {} as Record<string, Message[]>);
-
         const dashboardProps = {
-          listings: userListings, // Pass filtered listings
+          listings,
           onAddListing: handleAddListing,
           onEditListing: handleEditListing,
           onDeleteListing: handleDeleteListing,
-          interactionChats: userChats, // Pass filtered chats
+          interactionChats,
           humanTakeoverChats,
           onTakeoverChat: handleTakeoverChat,
           onSendAgentMessage: handleSendAgentMessage,
@@ -1043,18 +917,32 @@ const App: React.FC = () => {
           case UserRole.Agent:
             return <AgentDashboard user={currentUser} {...dashboardProps} />;
           case UserRole.Landlord:
+            return <AgentDashboard user={currentUser} {...dashboardProps} />; // Landlord uses same dashboard as Agent
+          case UserRole.PropertySeller:
+            return <AgentDashboard user={currentUser} {...dashboardProps} />; // PropertySeller uses same dashboard as Agent
+          case UserRole.PropertyOwner:
             return (
-              <LandlordDashboard
+              <OwnerDashboard
                 user={currentUser}
                 {...dashboardProps}
                 {...landlordProps}
               />
             );
-          case UserRole.PropertySeller:
+          case UserRole.Tenant:
+            const tenantInfo = tenants.find((t) => t.userId === currentUser.id);
             return (
-              <SellerDashboard
+              <TenantDashboard
                 user={currentUser}
-                {...dashboardProps}
+                tenant={tenantInfo}
+                maintenanceRequests={maintenanceRequests}
+                onAddRequest={handleAddMaintenanceRequest}
+              />
+            );
+          case UserRole.Surveyor:
+            return (
+              <SurveyorDashboard
+                user={currentUser}
+                onLogout={handleLogout}
               />
             );
           default:
@@ -1067,29 +955,29 @@ const App: React.FC = () => {
           <>
             <div
               ref={chatContainerRef}
-              className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-28 custom-scrollbar"
+              className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-28"
             >
-              {!chatHasStarted ? (
-                <HeroIntro isVisible={true} />
-              ) : (
-                <div className="mx-auto max-w-4xl w-full">
-                  {messages.map((msg) => (
+              <div
+                className={`mx-auto max-w-4xl w-full h-full flex flex-col justify-end transition-opacity duration-1000 ${chatHasStarted ? "opacity-100" : "opacity-0"
+                  }`}
+              >
+                {messages.map((msg) => (
+                  <ChatMessage
+                    key={msg.id}
+                    message={msg}
+                    onConnect={handleExploreProperty}
+                    onOpenImageViewer={handleOpenImageViewer}
+                  />
+                ))}
+                {isLoading &&
+                  messages[messages.length - 1]?.role !== Role.MODEL && (
                     <ChatMessage
-                      key={msg.id}
-                      message={msg}
-                      onConnect={handleExploreProperty}
-                      onOpenImageViewer={handleOpenImageViewer}
+                      message={{ id: "loading", role: Role.MODEL, text: "..." }}
+                      isLoading={true}
                     />
-                  ))}
-                  {isLoading &&
-                    messages[messages.length - 1]?.role !== Role.MODEL && (
-                      <ChatMessage
-                        message={{ id: "loading", role: Role.MODEL, text: "..." }}
-                        isLoading={true}
-                      />
-                    )}
-                </div>
-              )}
+                  )}
+              </div>
+              <HeroIntro isVisible={!chatHasStarted} />
             </div>
             <ChatInput
               onSendMessage={handleSendMessage}
@@ -1104,80 +992,81 @@ const App: React.FC = () => {
   };
 
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <div className="h-screen w-screen bg-gray-100 dark:bg-gradient-to-br dark:from-gray-900 dark:via-slate-800 dark:to-blue-900 text-gray-900 dark:text-white overflow-hidden">
-        <div className="flex h-full">
-          {/* Only show sidebar in chat view */}
-          {currentView === "chat" && (
-            <Sidebar
-              isOpen={isSidebarOpen}
-              setIsOpen={setIsSidebarOpen}
-              isUserLoggedIn={isUserLoggedIn}
-              chatUser={chatUser}
-              currentUser={currentUser}
-              onHomeClick={() => handleSetView("chat")}
-              onFeaturesClick={() => handleSetView("features")}
-              onDashboardClick={() => handleSetView("dashboard")}
-              onLogout={handleLogout}
-              conversations={conversations}
-              currentConversationId={currentConversationId}
-              onNewChat={handleNewChat}
-              onSelectConversation={handleSelectConversation}
-            />
-          )}
+    <div className="h-screen w-screen bg-gray-100 dark:bg-gradient-to-br dark:from-gray-900 dark:via-slate-800 dark:to-blue-900 text-gray-900 dark:text-white overflow-hidden">
+      <div className="flex h-full">
+        {/* Only show sidebar in chat view */}
+        {currentView === "chat" && (
+          <Sidebar
+            isOpen={isSidebarOpen}
+            setIsOpen={setIsSidebarOpen}
+            isUserLoggedIn={isUserLoggedIn}
+            chatUser={chatUser}
+            currentUser={currentUser}
+            onHomeClick={() => handleSetView("chat")}
+            onFeaturesClick={() => handleSetView("features")}
+            onDashboardClick={() => handleSetView("dashboard")}
+            onLogout={handleLogout}
+            conversations={conversations}
+            currentConversationId={currentConversationId}
+            onNewChat={handleNewChat}
+            onSelectConversation={handleSelectConversation}
+          />
+        )}
 
-          <main className="flex flex-col flex-1 h-full relative">
-            <Navbar
-              onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              onGoToAgentPortal={() => handleSetView("signIn")}
-              onFeaturesClick={() => handleSetView("features")}
-              onLogoClick={handleNewChat}
-              theme={theme}
-              onToggleTheme={handleToggleTheme}
-              currentView={currentView}
-              onLogout={handleLogout}
-            />
-            {renderView()}
-          </main>
-        </div>
-        {isViewerOpen && (
-          <ImageViewer
-            images={viewerImages}
-            startIndex={viewerStartIndex}
-            onClose={() => setIsViewerOpen(false)}
+        <main className="flex flex-col flex-1 h-full relative">
+          <Navbar
+            onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            onGoToAgentPortal={() => handleSetView("signIn")}
+            onFeaturesClick={() => handleSetView("features")}
+            onLogoClick={handleNewChat}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            currentView={currentView}
+            onLogout={handleLogout}
           />
-        )}
-        {isSignInModalVisible && (
-          <GoogleSignInModal onSignIn={handleGoogleSignIn} onSkip={handleSkipSignIn} />
-        )}
-        {isPaymentModalOpen && (
-          <FeaturePaymentModal
-            isOpen={isPaymentModalOpen}
-            onClose={() => setIsPaymentModalOpen(false)}
-            onConfirm={handleConfirmFeaturePayment}
-            title="Activate Tenant AI Management"
-            description="Unlock our powerful AI to manage tenant communications, send automated rent reminders, and handle maintenance updates, all in one place."
-            price="8,000 KSh/month"
-          />
-        )}
-        {isAddTenantModalOpen && (
-          <AddTenantModal
-            isOpen={isAddTenantModalOpen}
-            onClose={() => setIsAddTenantModalOpen(false)}
-            onAddTenant={handleAddTenant}
-          />
-        )}
-        {isLiveSessionActive && (
-          <LiveAudioHandler
-            onTranscription={handleSendMessage}
-            onError={(errorMsg) => {
-              alert(`Voice Input Error: ${errorMsg}`);
-              setIsLiveSessionActive(false);
-            }}
-          />
-        )}
+          {renderView()}
+        </main>
       </div>
-    </GoogleOAuthProvider >
+      {isViewerOpen && (
+        <ImageViewer
+          images={viewerImages}
+          startIndex={viewerStartIndex}
+          onClose={() => setIsViewerOpen(false)}
+        />
+      )}
+      {isSignInModalVisible && (
+        <GoogleSignInModal
+          onSignIn={handleGoogleSignIn}
+          onSkip={() => setIsSignInModalVisible(false)}
+        />
+      )}
+      {isPaymentModalOpen && (
+        <FeaturePaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onConfirm={handleConfirmFeaturePayment}
+          title="Activate Tenant AI Management"
+          description="Unlock our powerful AI to manage tenant communications, send automated rent reminders, and handle maintenance updates, all in one place."
+          price="8,000 KSh/month"
+        />
+      )}
+      {isAddTenantModalOpen && (
+        <AddTenantModal
+          isOpen={isAddTenantModalOpen}
+          onClose={() => setIsAddTenantModalOpen(false)}
+          onAddTenant={handleAddTenant}
+        />
+      )}
+      {isLiveSessionActive && (
+        <LiveAudioHandler
+          onTranscription={handleSendMessage}
+          onError={(errorMsg) => {
+            alert(`Voice Input Error: ${errorMsg}`);
+            setIsLiveSessionActive(false);
+          }}
+        />
+      )}
+    </div>
   );
 };
 

@@ -9,7 +9,7 @@ interface SettingsProps {
     onUpdate?: (updatedUser: User) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
+export const ProfileSettings: React.FC<SettingsProps> = ({ user, onUpdate }) => {
     const [formData, setFormData] = useState({
         name: user.name || '',
         email: user.email || '',

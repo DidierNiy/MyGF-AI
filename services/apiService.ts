@@ -64,17 +64,8 @@ export const authService = {
     login: async (credentials: { email: string; password: string }) => {
         return api.post('/auth/login', credentials);
     },
-    googleSignIn: async (data: { credential: string }) => {
-        return api.post('/auth/google', data);
-    },
     getMe: async () => {
         return api.get('/auth/me');
-    },
-    forgotPassword: async (email: string) => {
-        return api.post('/auth/forgot-password', { email });
-    },
-    resetPassword: async (token: string, newPassword: string) => {
-        return api.post('/auth/reset-password', { token, newPassword });
     },
 };
 
@@ -97,7 +88,6 @@ export const propertyService = {
         return api.get('/properties');
     },
     createProperty: async (propertyData: any) => {
-        console.log('apiService.createProperty called with:', propertyData);
         const formData = new FormData();
 
         // Append text fields
@@ -109,20 +99,12 @@ export const propertyService = {
 
         // Append images
         if (propertyData.images && propertyData.images.length > 0) {
-            console.log(`Appending ${propertyData.images.length} images`);
             propertyData.images.forEach((image: File) => {
                 formData.append('imageUrls', image);
             });
-        } else {
-            console.warn('No images found in propertyData');
         }
 
-        console.log('Sending FormData to /properties');
-        return api.post('/properties', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            }
-        });
+        return api.post('/properties', formData);
     },
     updateProperty: async (propertyId: string, updates: Partial<Omit<Listing, 'id' | 'imageUrls'>>) => {
         return api.put(`/properties/${propertyId}`, updates);

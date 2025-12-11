@@ -11,6 +11,7 @@ const roles = [
     { name: UserRole.Agent, description: 'Full features: Sell and rent properties, manage tenants.' },
     { name: UserRole.PropertySeller, description: 'Sell properties and maximize your investment returns.' },
     { name: UserRole.Landlord, description: 'Rent properties and manage tenants with AI assistance.' },
+    { name: UserRole.Surveyor, description: 'Accept survey tasks, upload reports, and earn from property surveys.' },
 ];
 
 const plans: SubscriptionPlan[] = [
@@ -68,6 +69,16 @@ export const AccountSetup: React.FC<AccountSetupProps> = ({ onSetupComplete }) =
         }
     }
 
+    // Auto-select 'None' plan for surveyors
+    const handleRoleSelect = (role: UserRole) => {
+        setSelectedRole(role);
+        if (role === UserRole.Surveyor) {
+            setSelectedPlan(PlanName.None);
+        } else {
+            setSelectedPlan(null);
+        }
+    };
+
     return (
         <div className="animate-fade-in-up">
             <div className="text-center">
@@ -78,31 +89,33 @@ export const AccountSetup: React.FC<AccountSetupProps> = ({ onSetupComplete }) =
             <div className="space-y-8">
                 <div>
                     <h3 className="text-lg font-semibold mb-3 text-center md:text-left">1. Choose Your Role</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {roles.map(role => (
                             <RoleCard
                                 key={role.name}
                                 role={role}
                                 isSelected={selectedRole === role.name}
-                                onSelect={() => setSelectedRole(role.name)}
+                                onSelect={() => handleRoleSelect(role.name)}
                             />
                         ))}
                     </div>
                 </div>
 
-                <div className={`transition-opacity duration-500 ${selectedRole ? 'opacity-100' : 'opacity-20 pointer-events-none'}`}>
-                    <h3 className="text-lg font-semibold mb-3 text-center md:text-left">2. Select Your Plan</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {plans.map(plan => (
-                            <PlanCard
-                                key={plan.name}
-                                plan={plan}
-                                isSelected={selectedPlan === plan.name}
-                                onSelect={() => setSelectedPlan(plan.name)}
-                            />
-                        ))}
+                {selectedRole !== UserRole.Surveyor && (
+                    <div className={`transition-opacity duration-500 ${selectedRole ? 'opacity-100' : 'opacity-20 pointer-events-none'}`}>
+                        <h3 className="text-lg font-semibold mb-3 text-center md:text-left">2. Select Your Plan</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {plans.map(plan => (
+                                <PlanCard
+                                    key={plan.name}
+                                    plan={plan}
+                                    isSelected={selectedPlan === plan.name}
+                                    onSelect={() => setSelectedPlan(plan.name)}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             <div className="flex justify-end mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">

@@ -14,6 +14,7 @@ export interface Listing {
   agentName?: string; // Optional, will be populated from createdBy
   agentContact?: string; // Optional
   imageUrls: string[];
+  images: string[]; // Added for HeroIntro compatibility
   tags?: string[];
   createdBy?: any; // To hold user object from backend
   isPromoted?: boolean;
@@ -55,11 +56,14 @@ export interface Conversation {
 export enum UserRole {
   Agent = 'Agent',
   Landlord = 'Landlord',
-  PropertySeller = 'Property Seller', // Backend expects 'Property Seller'
+  PropertySeller = 'Property Seller',
+  PropertyOwner = 'Property Owner',
+  Tenant = 'Tenant',
+  Surveyor = 'Surveyor',
 }
 
 // Role type that matches backend database values
-export type UserRoleType = 'tenant' | 'agent' | 'seller' | 'landlord' | 'Agent' | 'Landlord' | 'Property Seller' | 'Property Owner' | 'Tenant';
+export type UserRoleType = 'tenant' | 'agent' | 'seller' | 'landlord' | 'Agent' | 'Landlord' | 'Property Seller' | 'Property Owner' | 'Tenant' | 'Surveyor';
 
 export interface User {
   id: string;
@@ -92,6 +96,7 @@ export enum PlanName {
   Basic = 'Basic',
   MyGF1_3 = 'MyGF 1.3',
   MyGF3_2 = 'MyGF 3.2',
+  None = 'None',
 }
 
 export interface SubscriptionPlan {
@@ -182,4 +187,113 @@ export interface Lead {
   notes?: string;
   createdAt: string;
   closedAt?: string;
+}
+
+// Verification Center Types
+export interface DocumentVerification {
+  id: string;
+  userId: string;
+  documentType: 'title_deed' | 'sale_agreement' | 'id_document' | 'other';
+  fileName: string;
+  fileUrl: string;
+  status: 'pending' | 'verified' | 'potential_issue' | 'failed';
+  extractedData?: {
+    ownerName?: string;
+    lrNumber?: string;
+    size?: string;
+    location?: string;
+  };
+  aiAnalysis?: {
+    structureValid: boolean;
+    confidence: number;
+    issues?: string[];
+    recommendations?: string[];
+  };
+  createdAt: string;
+  verifiedAt?: string;
+}
+
+export interface LandSearchRequest {
+  id: string;
+  userId: string;
+  parcelNumber: string;
+  location: string;
+  documentUrl?: string;
+  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+  results?: {
+    ownershipHistory?: string[];
+    encumbrances?: string[];
+    boundaries?: string;
+    additionalInfo?: string;
+  };
+  createdAt: string;
+  completedAt?: string;
+  notificationSent: boolean;
+}
+
+export interface ValuationRequest {
+  id: string;
+  userId: string;
+  propertyId?: string;
+  propertyDetails?: {
+    location: string;
+    size: string;
+    type: string;
+  };
+  documentUrls: string[];
+  status: 'pending' | 'in-progress' | 'completed' | 'cancelled';
+  estimatedValue?: {
+    amount: number;
+    currency: string;
+    confidence: number;
+    comparables?: any[];
+  };
+  valuationReport?: string;
+  createdAt: string;
+  completedAt?: string;
+}
+
+// Surveyor Dashboard Types
+export interface SurveyTask {
+  id: string;
+  propertyId: string;
+  property?: Listing; // Populated property details
+  requestedBy: string; // User ID
+  requester?: User; // Populated requester details
+  assignedTo?: string; // Surveyor ID
+  status: 'pending' | 'assigned' | 'in-progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  scheduledDate?: string;
+  completedDate?: string;
+  location: {
+    address: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  requirements?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SurveyReport {
+  id: string;
+  taskId: string;
+  surveyorId: string;
+  reportFiles: string[]; // URLs to PDF reports
+  images: string[]; // URLs to images
+  gpsCoordinates: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  };
+  findings: string;
+  recommendations?: string;
+  aiValidation?: {
+    isValid: boolean;
+    confidence: number;
+    issues?: string[];
+  };
+  uploadedAt: string;
 }

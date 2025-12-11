@@ -3,13 +3,15 @@ import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
 import { Role, type Message, type Listing, type Tenant, type MaintenanceRequest } from "../types";
 
 // Use Vite's import.meta.env for environment variables
+// Use Vite's import.meta.env for environment variables
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY;
 
 if (!API_KEY) {
-    throw new Error("VITE_GEMINI_API_KEY environment variable not set");
+    console.warn("⚠️ VITE_GEMINI_API_KEY environment variable not set. AI features will not work.");
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Initialize with key or dummy to prevent crash, actual calls will fail gracefully
+const ai = new GoogleGenAI({ apiKey: API_KEY || "dummy-key-for-ui-loading" });
 
 const listingSchema = {
     type: Type.OBJECT,

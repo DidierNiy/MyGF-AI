@@ -41,6 +41,13 @@ export const ListingForm: React.FC<ListingFormProps> = ({ isOpen, onClose, onAdd
     const [tagInput, setTagInput] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
 
+    // Document upload states
+    const [titleDeed, setTitleDeed] = useState<File | null>(null);
+    const [saleAgreement, setSaleAgreement] = useState<File | null>(null);
+    const [kraPin, setKraPin] = useState<File | null>(null);
+    const [ownershipDocs, setOwnershipDocs] = useState<File[]>([]);
+    const [valuationReport, setValuationReport] = useState<File | null>(null);
+
     // Set default priceType based on user role
     useEffect(() => {
         if (userRole === UserRole.PropertySeller) {
@@ -251,6 +258,90 @@ export const ListingForm: React.FC<ListingFormProps> = ({ isOpen, onClose, onAdd
                                     ))}
                                 </div>
                             )}
+                        </div>
+
+                        {/* Document Uploads Section */}
+                        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-4">Property Documents (Optional)</h4>
+                            <div className="space-y-3">
+                                {/* Title Deed */}
+                                <div>
+                                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Title Deed
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={(e) => setTitleDeed(e.target.files?.[0] || null)}
+                                        className="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                                    />
+                                    {titleDeed && <p className="mt-1 text-xs text-green-600 dark:text-green-400">✓ {titleDeed.name}</p>}
+                                </div>
+
+                                {/* Sale Agreement */}
+                                <div>
+                                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Sale Agreement
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={(e) => setSaleAgreement(e.target.files?.[0] || null)}
+                                        className="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                                    />
+                                    {saleAgreement && <p className="mt-1 text-xs text-green-600 dark:text-green-400">✓ {saleAgreement.name}</p>}
+                                </div>
+
+                                {/* KRA PIN / ID (Kenya) */}
+                                <div>
+                                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        KRA PIN / ID (if Kenya)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={(e) => setKraPin(e.target.files?.[0] || null)}
+                                        className="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                                    />
+                                    {kraPin && <p className="mt-1 text-xs text-green-600 dark:text-green-400">✓ {kraPin.name}</p>}
+                                </div>
+
+                                {/* Ownership Documents */}
+                                <div>
+                                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Ownership Documents
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        multiple
+                                        onChange={(e) => setOwnershipDocs(e.target.files ? Array.from(e.target.files) : [])}
+                                        className="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                                    />
+                                    {ownershipDocs.length > 0 && (
+                                        <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                                            ✓ {ownershipDocs.length} file(s) selected
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Valuation Report */}
+                                <div>
+                                    <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        Valuation Report
+                                    </label>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={(e) => setValuationReport(e.target.files?.[0] || null)}
+                                        className="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none"
+                                    />
+                                    {valuationReport && <p className="mt-1 text-xs text-green-600 dark:text-green-400">✓ {valuationReport.name}</p>}
+                                </div>
+                            </div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                Accepted formats: PDF, JPG, JPEG, PNG
+                            </p>
                         </div>
                     </div>
                     <div className="flex items-center justify-end pt-6 mt-4 border-t border-gray-200 dark:border-gray-600 rounded-b">

@@ -9,7 +9,7 @@ import { FeaturePaymentModal } from '../../modals/FeaturePaymentModal';
 import { DashboardSidebar, type DashboardSection } from '../DashboardSidebar';
 import { AutomationDashboard } from '../../AutomationDashboard';
 import { LeadViewer } from '../LeadViewer';
-import { Settings } from '../ProfileSettings';
+import { ProfileSettings } from '../ProfileSettings';
 import { NotificationBadge } from '../NotificationBadge';
 import { NotificationPanel } from '../NotificationPanel';
 import { AIPropertyManager } from '../combined/AIPropertyManager';
@@ -148,7 +148,7 @@ export const AgentDashboard: React.FC<AgentDashboardProps> = ({
                 return <AgentAiSettings />;
             case 'settings':
                 return user ? (
-                    <Settings user={user} onUpdate={(updatedUser) => {
+                    <ProfileSettings user={user} onUpdate={(updatedUser) => {
                         console.log('User updated:', updatedUser);
                     }} />
                 ) : (

@@ -33,3 +33,51 @@ exports.sendAnnouncement = asyncHandler(async (req, res, next) => {
 
     res.status(200).json({ success: true, message: 'Announcement sent to all users.' });
 });
+
+// @desc    Create a surveyor account
+// @route   POST /api/admin/create-surveyor
+// @access  Private (Admin)
+exports.createSurveyor = asyncHandler(async (req, res, next) => {
+    const { name, email, password, phone } = req.body;
+
+    if (!name || !email || !password) {
+        return res.status(400).json({
+            success: false,
+            message: 'Name, email, and password are required'
+        });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        return res.status(400).json({
+            success: false,
+            message: 'User with this email already exists'
+        });
+    }
+
+    // Create surveyor user
+    const surveyor = await User.create({
+        name,
+        email,
+        password, // Will be hashed by User model pre-save hook
+        phone: phone || '',
+        role: 'Surveyor',
+        subscription: {
+            plan: 'Free', // Surveyors don't need paid plans
+            status: 'active',
+        },
+    });
+
+    res.status(201).json({
+        success: true,
+        message: 'Surveyor account created successfully',
+        data: {
+            id: surveyor._id,
+            name: surveyor.name,
+            email: surveyor.email,
+            role: surveyor.role,
+        }
+    });
+});
+

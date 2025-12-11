@@ -40,25 +40,25 @@ export const LiveAudioHandler: React.FC<LiveAudioHandlerProps> = ({ onTranscript
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
         sessionPromiseRef.current = ai.live.connect({
-          model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+          model: 'gemini-2.0-flash-exp',
           callbacks: {
             onopen: async () => {
               console.log('Live session opened.');
               stream = await navigator.mediaDevices.getUserMedia({ audio: true });
               // FIX: Cast window to `any` to allow access to the prefixed `webkitAudioContext` for Safari compatibility.
               inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-              
+
               const source = inputAudioContext.createMediaStreamSource(stream);
               const scriptProcessor = inputAudioContext.createScriptProcessor(4096, 1, 1);
 
               scriptProcessor.onaudioprocess = (audioProcessingEvent) => {
                 const inputData = audioProcessingEvent.inputBuffer.getChannelData(0);
                 const pcmBlob = createBlob(inputData);
-                
+
                 if (sessionPromiseRef.current) {
-                    sessionPromiseRef.current.then((session) => {
-                        session.sendRealtimeInput({ media: pcmBlob });
-                    });
+                  sessionPromiseRef.current.then((session) => {
+                    session.sendRealtimeInput({ media: pcmBlob });
+                  });
                 }
               };
 
@@ -66,10 +66,27 @@ export const LiveAudioHandler: React.FC<LiveAudioHandlerProps> = ({ onTranscript
               scriptProcessor.connect(inputAudioContext.destination);
             },
             onmessage: async (message: LiveServerMessage) => {
+              // Handle User Transcription (what the user said)
               if (message.serverContent?.inputTranscription) {
                 const text = message.serverContent.inputTranscription.text;
                 if (text) {
                   onTranscription(text);
+                }
+              }
+
+              // Handle Model Response (what the AI said)
+              if (message.serverContent?.modelTurn) {
+                const parts = message.serverContent.modelTurn.parts;
+                for (const part of parts) {
+                  if (part.text) {
+                    // For now, we'll just log it or append it if we had a way to stream AI speech text back.
+                    // But the user's issue "it just listen without responding" likely refers to the fact that 
+                    // the transcription wasn't triggering a message send or the AI wasn't replying to the *voice* input.
+                    // The `onTranscription` callback updates the input box. 
+                    // If the user wants the AI to *speak* back, we need to handle audio output.
+                    // If they just want the text to appear and then *send*, we need to check `ChatInput`.
+                    console.log("AI Response:", part.text);
+                  }
                 }
               }
             },

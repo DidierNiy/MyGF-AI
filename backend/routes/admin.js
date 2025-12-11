@@ -1,5 +1,5 @@
 const express = require('express');
-const { getUsers, sendAnnouncement } = require('../controllers/admin');
+const { getUsers, sendAnnouncement, createSurveyor } = require('../controllers/admin');
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/authorize');
 
@@ -11,5 +11,6 @@ router.use(authorize('Admin'));
 
 router.get('/users', getUsers);
 router.post('/announcements', sendAnnouncement);
+router.post('/create-surveyor', createSurveyor);
 
 module.exports = router;

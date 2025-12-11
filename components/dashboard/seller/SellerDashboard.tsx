@@ -12,6 +12,7 @@ import { DashboardSidebar, DashboardSection } from '../DashboardSidebar';
 import { MenuIcon } from '../../icons/MenuIcon';
 import { LeadViewer } from '../LeadViewer';
 import { AutomationDashboard } from '../../AutomationDashboard';
+import { VerificationCenter } from '../verification/VerificationCenter';
 
 interface SellerDashboardProps {
     user?: User;
@@ -81,6 +82,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({
                 return <AutomationDashboard user={user || { id: 'demo', name: 'Demo User', email: 'demo@example.com', role: 'Property Seller' } as User} automationEnabled={false} voiceFeatureEnabled={false} />;
             case 'notifications':
                 return <NotificationPanel />;
+            case 'verification':
+                return <VerificationCenter userId={user?.id || user?._id || ''} userProperties={listings} />;
             case 'settings':
                 return user ? (
                     <Settings user={user} onUpdate={(updatedUser) => {
