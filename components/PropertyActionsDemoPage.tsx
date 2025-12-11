@@ -27,6 +27,11 @@ export const PropertyActionsDemoPage: React.FC = () => {
             'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
             'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800'
         ],
+        images: [
+            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800',
+            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800',
+            'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800'
+        ],
         tags: ['Modern', 'Secure', 'Prime Location'],
         agentName: 'Demo Agent',
         agentContact: '+254 700 000 000',
